@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from model import db, People
-from flask_marshmallow import Marshmallow
+from schema import ma, PeopleSchema
 from flask_swagger_ui import get_swaggerui_blueprint
 import sys, os
 
@@ -13,65 +13,50 @@ app = Flask(__name__)
 
 # Config to SQLite
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.getcwd(), "database.db")
-
 # Config to MySQL
 # app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://ducpn:123@localhost:3306/demoDB"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(app)
-
+# flask swagger configs
 SWAGGER_URL = '/swagger'
 API_URL = '/static/swagger.json'
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
     config={
-        'app_name': "DEMO Swagger"
+        'app_name': "Todo List API"
     }
 )
 app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
-ma = Marshmallow(app)
 
-# create db schema class
-class PeopleSchema(ma.Schema):
-    class Meta:
-        fields = ('ID', 'last_name', 'first_name', 'age')
+db.init_app(app)
+ma.init_app(app)
+
 # instantiate schema objects for todolist and todolists
-Peoples_schema = PeopleSchema(many=True)
-
+persons_schema = PeopleSchema(many=True)
+person_schema = PeopleSchema(many=False)
 
 
 @app.route("/api")
 def index():
     return jsonify({"msg":"Success"})
 
-@app.route("/api/get_Peoples", methods=["GET"])
-def get_Peoples():
-    Peoples  = People.query.all()
-    result_set = Peoples_schema.dump(Peoples)
+@app.route("/api/get_persons", methods=["GET"])
+def get_persons():
+    persons  = People.query.all()
+    result_set = persons_schema.dump(persons)
+    
     return jsonify(result_set)
 
-    # for People in Peoples:
-    #     data.append({
-    #         "id": People.ID,
-    #         "last_name": People.last_name,
-    #         "first_name": People.first_name,
-    #         "age": People.age
-    #     })
-    # return jsonify(data)
-
-@app.route("/api/get_People/<int:person_id>", methods=["GET"])
-def get_People(person_id):
-    People = People.query.filter_by(ID=person_id).first()
-    return jsonify({
-        "id": People.ID,
-        "last_name": People.last_name,
-        "first_name": People.first_name,
-        "age": People.age
-    }), 200
+@app.route("/api/get_person/<int:person_id>", methods=["GET"])
+def get_person(person_id):
+    person = People.query.filter_by(person_id=person_id).first()
+    result_set = person_schema.dump(person)
+    print(result_set)
+    return jsonify(result_set)
 
 @app.route("/api/create_person", methods=["POST"])
-def create_word():
+def create_person():
     data = request.get_json()
     last_name = data["last_name"]
     first_name = data["first_name"]
@@ -86,12 +71,14 @@ def create_word():
     db.session.commit()
     db.session.flush()
     _id = new_data.ID
-    return jsonify({
+    person_data = {
         'id': _id,
         'last_name': last_name,
         'first_name': first_name,
         'age': age
-    }), 201
+    }
+    result_set = persons_schema.dump(person_data)
+    return jsonify({result_set})
 
 @app.route("/api/update_person/<int:person_id>", methods=["PATCH"])
 def update_word(person_id):
