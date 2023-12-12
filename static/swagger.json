@@ -59,6 +59,58 @@
           }
         }
       }
+    },
+    "/get_person/{person_id}": {
+      "get": {
+        "tags": [
+          "Person"
+        ],
+        "summary": "Get a person",
+        "parameters": [{
+          "name": "person_id",
+          "in": "path",
+          "description": "person id to get",
+          "required": true,
+          "type": "integer",
+          "schema" : {
+              "$ref": "#/components/schemas/Id"
+          }
+        }],
+        "description": "Get a person",
+        "operationId": "getaperson",
+        "requestBody": {
+          "description": "Get person with person id",
+          "content": {
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID supplied"
+          },
+          "404": {
+            "description": "Person not found"
+          },
+          "405": {
+            "description": "Validation exception"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -87,6 +139,10 @@
         "xml": {
           "name": "person"
         }
+      },
+      "Id": {
+        "type": "integer",
+        "format":"int64"
       }
     }
   }
